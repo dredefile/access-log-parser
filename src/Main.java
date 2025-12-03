@@ -32,22 +32,17 @@ public class Main {
 //        int minLength = 0;
         int googleBotCount = 0;
         int yandexBotCount = 0;
-                try {
+        try {
+            String line;
             FileReader fileReader = new FileReader(path);
             BufferedReader reader = new BufferedReader(fileReader);
-            String line;
             while ((line = reader.readLine()) != null) {
                 int length = line.length();
                 linesCount++;
                 if (length > 1024) {
                     throw new RuntimeException("Строка превышает максимальную длину в 1024 символа");
                 }
-//                if (length < maxLength) {
-//                    maxLength = length;
-//                }
-//                if (length > minLength) {
-//                    minLength = length;
-//                }
+
                 String userAgent = selectUserAgent(line);
                 if (userAgent == null) continue;
 
@@ -76,15 +71,15 @@ public class Main {
         System.out.println(yandexBotCount);
         System.out.println("Googlebot: " + percent(googleBotCount, linesCount) + " %");
         System.out.println("YandexBot: " + percent(yandexBotCount, linesCount) + " %");
-//        System.out.println("Максимальная длина строки: " + minLength);
-//        System.out.println("Минимальная длина строки: " + maxLength);
     }
+
     private static String selectUserAgent(String line) {
         int lastMark = line.lastIndexOf("\"");
         int prevMark = line.lastIndexOf("\"", lastMark - 1);
         return line.substring(prevMark + 1, lastMark);
     }
-    private static String removeBrackets (String userAgent) {
+
+    private static String removeBrackets(String userAgent) {
         int open = userAgent.indexOf("(");
         int close = userAgent.indexOf(")");
         if (open == -1 || close == -1) return null;
