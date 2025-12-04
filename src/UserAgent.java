@@ -37,7 +37,7 @@ public class UserAgent {
         }
     }
 
-    public OS getOs() {
+    public OS getOS() {
         return os;
     }
 
