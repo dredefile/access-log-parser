@@ -10,6 +10,12 @@ public class Statistics {
     private static HashMap<String, Integer> frequencyOS = new HashMap<>();
     private static HashSet<String> notExistingPaths = new HashSet<>();
     private static HashMap<String, Integer> frequencyBrowser = new HashMap<>();
+    private final List<LogEntry> entries = new ArrayList<>(); // все записи
+    private long visitByUsers = 0; //кол-во реальных посещений (не ботов)
+    private long errorCount = 0; // ко-во ошибочных запросов >= 400
+    private final Set<String> uniqueUserIP = new HashSet<>(); // Уникальные польз по IP
+
+
 
     public Statistics() {
         this.maxTime = null;
@@ -17,7 +23,7 @@ public class Statistics {
         this.totalTraffic = 0;
     }
 
-    public void addEntry(LogEntry entry) {
+    public void addEntry(LogEntry entry) { //Метод добавляет ОС и браузер в списки
         totalTraffic += entry.getResponseSize();
         LocalDateTime time = entry.getDateTime();
         if (minTime == null || time.isBefore(minTime))
@@ -43,6 +49,16 @@ public class Statistics {
             frequencyBrowser.put(browser, 1);
         } else {
             frequencyBrowser.put(browser, frequencyBrowser.get(browser) + 1);//если есть OS, то увеличиваем на 1
+        }
+        boolean bot = entry.getUserAgent().toLowerCase().contains("bot");
+        //посещение реального пользователя
+        if (!bot) {
+            visitByUsers++;
+            uniqueUserIP.add(entry.getIp());
+        }
+        // статус код >=400 && <=599
+        if (entry.getResponse() >= 400 && entry.getResponse() <= 599) {
+            errorCount++;
         }
     }
 
@@ -97,4 +113,38 @@ public class Statistics {
         }
         return browserStats;
     }
+
+    //Метод подсчета времени между max и minTime в часах
+    private double getHours() {
+        if (minTime == null || maxTime == null) return 0;
+        Duration duration = Duration.between(minTime, maxTime);
+        return  duration.toSeconds()/3600;
+    }
+
+    // Подсчет среднего количества посещений сайта за час реальных пользователей
+    public double getAverageVisitsPerHour() {
+        double hours = getHours();
+        if (hours == 0) return 0;
+        long visits = entries.stream().filter(e -> !e.getUserAgent().toLowerCase().contains("bot")).count();
+        return visits / hours;
+    }
+
+    // Подсчет среднего количества ошибочных запросов
+    public double getAverageErrorsPerHour() {
+        double hours = getHours();
+        if (hours == 0) return 0;
+        long errors = entries.stream().filter(e -> e.getResponse() >= 400).count();
+        return errors / hours;
+    }
+
+    // Средняя посещаемость одним пользователем
+    public double getAverageVisitsPerUser() {
+        long visits = entries.stream().filter(e -> !e.getUserAgent().toLowerCase().contains("bot")).count();
+        long uniqueUsers = entries.stream().filter(e -> !e.getUserAgent().toLowerCase().contains("bot"))
+                .map(e -> e.getIp()).distinct().count();
+        if (uniqueUsers == 0) return 0;
+        return (double)  uniqueUsers / visits;
+        }
+
+
 }
